@@ -6,7 +6,7 @@ import transformers
 from tensor_parallel import TensorParallel
 from tensor_parallel.slicing_configs import get_bloom_config
 
-from petals.bloom.from_pretrained import load_pretrained_block
+from petals.server.from_pretrained import load_pretrained_block
 from test_utils import MODEL_NAME
 
 
@@ -14,8 +14,11 @@ from test_utils import MODEL_NAME
 @pytest.mark.parametrize("custom_config", [True, False])
 @pytest.mark.parametrize("devices", [("cpu",) * 2, ("cpu",) * 3, ("cpu",) * 4])
 def test_tp_block(devices, custom_config):
-    block_index = random.randint(0, 10)
     model_config = transformers.AutoConfig.from_pretrained(MODEL_NAME)
+    if model_config.model_type != "bloom":
+        pytest.skip("Tensor parallelism is implemented only for BLOOM for now")
+
+    block_index = random.randint(0, 10)
     block = load_pretrained_block(MODEL_NAME, block_index=block_index, torch_dtype=torch.float32).to(devices[0])
 
     tp_config = None
